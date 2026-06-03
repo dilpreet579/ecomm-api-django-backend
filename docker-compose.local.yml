@@ -1,7 +1,6 @@
 volumes:
   ecomm_api_local_postgres_data: {}
   ecomm_api_local_postgres_data_backups: {}
-  
 
 services:
   django:
@@ -12,6 +11,7 @@ services:
     container_name: ecomm_api_local_django
     depends_on:
       - postgres
+      - redis
     volumes:
       - /app/.venv
       - .:/app:z
@@ -33,3 +33,26 @@ services:
       - ecomm_api_local_postgres_data_backups:/backups
     env_file:
       - ./.envs/.local/.postgres
+
+  redis:
+    image: redis:7
+    container_name: ecomm_api_local_redis
+    ports:
+      - '6379:6379'
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: ./compose/local/django/Dockerfile
+    image: ecomm_api_local_django
+    container_name: ecomm_api_local_celery_worker
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - /app/.venv
+      - .:/app:z
+    env_file:
+      - ./.envs/.local/.django
+      - ./.envs/.local/.postgres
+    command: celery -A ecomm_api.celery_app worker --loglevel=info

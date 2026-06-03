@@ -32,6 +32,8 @@ dependencies = [
   "python-slugify==8.0.4",
   "redis==8.0.0",
   "whitenoise==6.12.0",
+  "celery==5.4.0",
+  "django-celery-results==2.5.1",
 ]
 
 [dependency-groups]

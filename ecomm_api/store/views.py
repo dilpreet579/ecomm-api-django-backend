@@ -10,6 +10,7 @@ from .serializers import (
     CartItemSerializer,
     OrderSerializer,
 )
+from .tasks import send_order_confirmation
 
 # --- Product Views ---
 
@@ -134,6 +135,11 @@ class OrderListView(APIView):
 
         # clear the cart after ordering
         cart_items.delete()
+
+        # .delay() means "run this in background, don't wait for it"
+        send_order_confirmation.delay(
+            order_id=order.id, user_email=request.user.email, total=order.total
+        )
 
         serializer = OrderSerializer(order)
         return Response(serializer.data, status=status.HTTP_201_CREATED)

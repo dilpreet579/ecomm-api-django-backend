@@ -26,7 +26,7 @@ urlpatterns = [
     # Media files
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
     # my added urls
-    path("api/", include("store.urls")),
+    path("api/", include("ecomm_api.store.urls")),
 ]
 
 # API URLS
