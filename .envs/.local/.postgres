@@ -1,0 +1,7 @@
+# PostgreSQL
+# ------------------------------------------------------------------------------
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB=ecomm_api
+POSTGRES_USER=EsQWElKduMqWijYkVCSNNxlIElQsaNjw
+POSTGRES_PASSWORD=H0CThHlJEcyM3LOAYRFCWYIZJqmOEllU5gAAoTeyPEA8TiwrwDpB2kiYFvYsO6Y9
