@@ -1,54 +1,263 @@
-# Ecomm API
+# 🛒 Ecomm API
 
-my cookiecutter intro
+A production-ready Django REST API for e-commerce, built with Cookiecutter Django, Docker, PostgreSQL, and Celery.
 
-[![Built with Cookiecutter Django](https://img.shields.io/badge/built%20with-Cookiecutter%20Django-ff69b4.svg?logo=cookiecutter)](https://github.com/cookiecutter/cookiecutter-django/)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+---
 
-License: MIT
+## Tech Stack
 
-## Settings
+| Layer | Technology |
+|---|---|
+| Framework | Django 6 + Django REST Framework |
+| Database | PostgreSQL 18 |
+| Auth | django-allauth (JWT-ready) |
+| Background Tasks | Celery + Redis |
+| Containerization | Docker + Docker Compose |
+| Project Structure | Cookiecutter Django |
+| API Docs | drf-spectacular (Swagger) |
 
-Moved to [settings](https://cookiecutter-django.readthedocs.io/en/latest/1-getting-started/settings.html).
+---
 
-## Basic Commands
+## Features
 
-### Setting Up Your Users
+- **Products** — list and retrieve products
+- **Cart** — add items, view cart, remove items
+- **Orders** — place orders from cart, view order history
+- **Auth** — register, login, email verification via allauth
+- **Background Tasks** — order confirmation emails via Celery
+- **Admin Panel** — manage all models via Django admin
 
-- To create a **normal user account**, just go to Sign Up and fill out the form. Once you submit it, you'll see a "Verify Your E-mail Address" page. Go to your console to see a simulated email verification message. Copy the link into your browser. Now the user's email should be verified and ready to go.
+---
 
-- To create a **superuser account**, use this command:
+## Project Structure
 
-      uv run python manage.py createsuperuser
+```
+ecomm_api/
+├── config/
+│   ├── settings/
+│   │   ├── base.py          # shared settings
+│   │   ├── local.py         # dev settings
+│   │   └── production.py    # production settings
+│   ├── urls.py
+│   └── wsgi.py
+├── ecomm_api/
+│   ├── store/               # main app
+│   │   ├── models.py        # Product, Cart, CartItem, Order, OrderItem
+│   │   ├── serializers.py   # DRF serializers
+│   │   ├── views.py         # API views
+│   │   ├── urls.py          # URL routing
+│   │   ├── tasks.py         # Celery background tasks
+│   │   └── admin.py         # Admin panel config
+│   ├── users/               # pre-built auth app
+│   └── celery_app.py        # Celery configuration
+├── .envs/
+│   └── .local/
+│       ├── .django          # Django env vars
+│       └── .postgres        # Database env vars
+├── docker-compose.local.yml
+└── manage.py
+```
 
-For convenience, you can keep your normal user logged in on Chrome and your superuser logged in on Firefox (or similar), so that you can see how the site behaves for both kinds of users.
+---
 
-### Type checks
+## Getting Started
 
-Running type checks with mypy:
+### Prerequisites
 
-    uv run mypy ecomm_api
+- Docker Desktop (running)
+- Python 3.14+
 
-### Test coverage
+### 1. Clone the repo
 
-To run the tests, check your test coverage, and generate an HTML coverage report:
+```bash
+git clone <your-repo-url>
+cd ecomm_api
+```
 
-    uv run coverage run -m pytest
-    uv run coverage html
-    uv run open htmlcov/index.html
+### 2. Start all services
 
-#### Running tests with pytest
+```bash
+docker-compose -f docker-compose.local.yml up --build
+```
 
-    uv run pytest
+This spins up 4 containers:
+- `django` — the API on port 8000
+- `postgres` — the database on port 5432
+- `redis` — message broker on port 6379
+- `celery_worker` — background task worker
 
-### Live reloading and Sass CSS compilation
+### 3. Run migrations
 
-Moved to [Live reloading and SASS compilation](https://cookiecutter-django.readthedocs.io/en/latest/2-local-development/developing-locally.html#using-webpack-or-gulp).
+In a second terminal:
 
-## Deployment
+```bash
+docker-compose -f docker-compose.local.yml run --rm django python manage.py migrate
+```
 
-The following details how to deploy this application.
+### 4. Create a superuser
 
-### Docker
+```bash
+docker-compose -f docker-compose.local.yml run --rm django python manage.py createsuperuser
+```
 
-See detailed [cookiecutter-django Docker documentation](https://cookiecutter-django.readthedocs.io/en/latest/3-deployment/deployment-with-docker.html).
+### 5. Visit the app
+
+| URL | Description |
+|---|---|
+| `http://localhost:8000/api/` | Browsable REST API |
+| `http://localhost:8000/admin/` | Django admin panel |
+| `http://localhost:8000/api/docs/` | Swagger API documentation |
+
+---
+
+## API Endpoints
+
+### Auth
+```
+POST   /accounts/signup/          register a new user
+POST   /accounts/login/           login
+POST   /accounts/logout/          logout
+```
+
+### Products
+```
+GET    /api/products/             list all products
+GET    /api/products/<id>/        get a single product
+```
+
+### Cart
+```
+GET    /api/cart/                 view your cart
+POST   /api/cart/items/           add item to cart
+DELETE /api/cart/items/<id>/      remove item from cart
+```
+
+### Orders
+```
+GET    /api/orders/               list your orders
+POST   /api/orders/               place order from cart
+GET    /api/orders/<id>/          get a single order
+```
+
+---
+
+## Environment Variables
+
+All secrets live in `.envs/.local/`. Never commit these to Git.
+
+**`.envs/.local/.django`**
+```
+DJANGO_SECRET_KEY=your-secret-key
+DJANGO_DEBUG=True
+DJANGO_ALLOWED_HOSTS=localhost
+REDIS_URL=redis://redis:6379/0
+```
+
+**`.envs/.local/.postgres`**
+```
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB=ecomm_api
+POSTGRES_USER=your_user
+POSTGRES_PASSWORD=your_password
+```
+
+---
+
+## Useful Commands
+
+```bash
+# run all services
+docker-compose -f docker-compose.local.yml up
+
+# stop all services
+docker-compose -f docker-compose.local.yml down
+
+# run migrations
+docker-compose -f docker-compose.local.yml run --rm django python manage.py migrate
+
+# make migrations after model changes
+docker-compose -f docker-compose.local.yml run --rm django python manage.py makemigrations
+
+# open Django shell
+docker-compose -f docker-compose.local.yml run --rm django python manage.py shell
+
+# run tests
+docker-compose -f docker-compose.local.yml run --rm django pytest
+
+# view logs
+docker-compose -f docker-compose.local.yml logs
+
+# rebuild from scratch (after dependency changes)
+docker-compose -f docker-compose.local.yml build --no-cache
+```
+
+---
+
+## Data Models
+
+```
+Product
+  - name, description, price, stock
+
+Cart (one per user)
+  - user (OneToOne)
+  - get_total()
+
+CartItem
+  - cart (FK), product (FK), quantity
+  - get_subtotal()
+
+Order
+  - user (FK), total, status (pending/confirmed/shipped/delivered/cancelled)
+
+OrderItem
+  - order (FK), product (FK), quantity, price (snapshot at order time)
+```
+
+---
+
+## Background Tasks (Celery)
+
+When an order is placed, an order confirmation email is sent asynchronously:
+
+```python
+send_order_confirmation.delay(
+    order_id=order.id,
+    user_email=request.user.email,
+    total=order.total
+)
+```
+
+The Celery worker picks this up from Redis and processes it in the background — the user gets an instant API response without waiting for the email to send.
+
+In development, emails are printed to the Django console log.
+
+---
+
+## What I Learned Building This
+
+- Django MTV architecture and the URL → View → Model → Response flow
+- Django ORM — models, relationships, querysets
+- Django REST Framework — serializers, APIViews, permissions
+- Cookiecutter Django — split settings, production-ready project structure
+- Docker Compose — multi-container setup with service dependencies
+- Celery + Redis — background task processing
+- django-allauth — production-grade authentication with email verification
+
+---
+
+## Next Steps
+
+- [ ] Product filtering and search (`django-filter`)
+- [ ] Pagination for product and order lists
+- [ ] Stock management on order placement
+- [ ] Order cancellation endpoint
+- [ ] Write tests with `pytest-django`
+- [ ] Deploy to production
+
+---
+
+## License
+
+MIT
