@@ -1,15 +1,17 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from django.contrib.auth.models import User
-from .models import Product, Cart, CartItem, Order, OrderItem
-from .serializers import (
-    ProductSerializer,
-    CartSerializer,
-    CartItemSerializer,
-    OrderSerializer,
-)
+from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .models import Cart
+from .models import CartItem
+from .models import Order
+from .models import OrderItem
+from .models import Product
+from .serializers import CartSerializer
+from .serializers import OrderSerializer
+from .serializers import ProductSerializer
 from .tasks import send_order_confirmation
 
 # --- Product Views ---
@@ -34,7 +36,7 @@ class ProductDetailView(APIView):
             return Response(serializer.data)
         except Product.DoesNotExist:
             return Response(
-                {"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND
+                {"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND,
             )
 
 
@@ -46,7 +48,7 @@ class CartView(APIView):
 
     def get(self, request):
         # get or create cart for this user
-        cart, created = Cart.objects.get_or_create(user=request.user)
+        cart, _created = Cart.objects.get_or_create(user=request.user)
         serializer = CartSerializer(cart)
         return Response(serializer.data)
 
@@ -64,7 +66,7 @@ class CartItemView(APIView):
             product = Product.objects.get(pk=product_id)
         except Product.DoesNotExist:
             return Response(
-                {"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND
+                {"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND,
             )
 
         # if item already in cart, increase quantity
@@ -84,11 +86,11 @@ class CartItemView(APIView):
             cart_item = CartItem.objects.get(pk=pk, cart__user=request.user)
             cart_item.delete()
             return Response(
-                {"message": "Item removed"}, status=status.HTTP_204_NO_CONTENT
+                {"message": "Item removed"}, status=status.HTTP_204_NO_CONTENT,
             )
         except CartItem.DoesNotExist:
             return Response(
-                {"error": "Item not found"}, status=status.HTTP_404_NOT_FOUND
+                {"error": "Item not found"}, status=status.HTTP_404_NOT_FOUND,
             )
 
 
@@ -110,18 +112,18 @@ class OrderListView(APIView):
             cart = Cart.objects.get(user=request.user)
         except Cart.DoesNotExist:
             return Response(
-                {"error": "Cart is empty"}, status=status.HTTP_400_BAD_REQUEST
+                {"error": "Cart is empty"}, status=status.HTTP_400_BAD_REQUEST,
             )
 
         cart_items = cart.items.all()
         if not cart_items:
             return Response(
-                {"error": "Cart is empty"}, status=status.HTTP_400_BAD_REQUEST
+                {"error": "Cart is empty"}, status=status.HTTP_400_BAD_REQUEST,
             )
 
         # create the order
         order = Order.objects.create(
-            user=request.user, total=cart.get_total(), status="pending"
+            user=request.user, total=cart.get_total(), status="pending",
         )
 
         # copy cart items to order items
@@ -138,7 +140,7 @@ class OrderListView(APIView):
 
         # .delay() means "run this in background, don't wait for it"
         send_order_confirmation.delay(
-            order_id=order.id, user_email=request.user.email, total=order.total
+            order_id=order.id, user_email=request.user.email, total=order.total,
         )
 
         serializer = OrderSerializer(order)
@@ -155,5 +157,5 @@ class OrderDetailView(APIView):
             return Response(serializer.data)
         except Order.DoesNotExist:
             return Response(
-                {"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND
+                {"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND,
             )

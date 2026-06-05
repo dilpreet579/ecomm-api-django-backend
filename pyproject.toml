@@ -139,6 +139,8 @@ lint.ignore = [
   # of types for comparison.
   # Deactivated because it can make the code slow:
   # https://github.com/astral-sh/ruff/issues/7871
+  "EXE001",
+  "EXE002",
 ]
 lint.isort.force-single-line = true
 
