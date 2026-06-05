@@ -71,7 +71,7 @@ jobs:
           DJANGO_SETTINGS_MODULE: config.settings.test
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
           REDIS_URL: redis://localhost:6379/0
-          DJANGO_SECRET_KEY: yXcneWff5UxHxeLzf1Zs9eM7AzT5mSemz6qj2BOTty5jrzsaSaPSWvSObTaoa0QV
+          DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
           DJANGO_READ_DOT_ENV_FILE: "False"
         run: |
           uv run pytest --tb=short
